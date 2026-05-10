@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
   }
 
-  if (!submission.price_usd) {
+  if (!(submission as any).price_usd) {
     return NextResponse.json({ error: 'Price not set yet — our team will update it shortly' }, { status: 400 });
   }
 
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const s = submission as any;
     const npRes = await fetch('https://api.nowpayments.io/v1/invoice', {
       method: 'POST',
       headers: {
@@ -41,11 +42,11 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        price_amount: submission.price_usd,
+        price_amount: s.price_usd,
         price_currency: 'usd',
         pay_currency: 'usdttrc20',
-        order_id: submission.id,
-        order_description: `PropFirmPassing — ${submission.prop_firm} ${submission.account_size} ${submission.challenge_phase}`,
+        order_id: s.id,
+        order_description: `PropFirmPassing — ${s.prop_firm} ${s.account_size} ${s.challenge_phase}`,
         ipn_callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/webhook`,
         success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?payment=success`,
         cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?payment=cancelled`,
@@ -62,19 +63,4 @@ export async function POST(req: NextRequest) {
     const admin = createSupabaseAdmin();
     await admin
       .from('account_submissions')
-      .update({
-        payment_id: npData.id,
-        payment_status: 'pending',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', submission_id);
-
-    return NextResponse.json({
-      payment_url: npData.invoice_url,
-      payment_id: npData.id,
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Payment creation failed';
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
-}
+      .update
