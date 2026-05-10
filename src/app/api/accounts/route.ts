@@ -42,11 +42,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('account_submissions')
-    .insert({
-      user_id: user.id,
-      ...parsed.data,
-      status: 'pending',
-    })
+    .insert({ user_id: user.id, ...parsed.data, status: 'pending' })
     .select()
     .single();
 
