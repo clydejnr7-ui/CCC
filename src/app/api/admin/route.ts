@@ -12,7 +12,8 @@ async function verifyAdmin() {
     .select('role')
     .eq('id', user.id)
     .single();
-  if (profile?.role !== 'admin') return null;
+  const typedProfile = profile as { role?: string } | null;
+  if (typedProfile?.role !== 'admin') return null;
   return user;
 }
 
@@ -50,14 +51,9 @@ export async function PATCH(req: NextRequest) {
   const { id, ...updates } = parsed.data;
   const admin = createSupabaseAdmin();
 
-  const updatePayload: Record<string, unknown> = {
-    ...updates,
-    updated_at: new Date().toISOString(),
-  };
-
   const { data, error } = await admin
     .from('account_submissions')
-    .update(updatePayload)
+    .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select('*, profiles(email, full_name)')
     .single();
@@ -78,13 +74,11 @@ export async function PATCH(req: NextRequest) {
             <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
               <h2 style="color:#22c55e">🎉 Your Challenge Has Been Passed!</h2>
               <p>Hi ${profile.full_name ?? 'Trader'},</p>
-              <p>Great news! We have successfully passed your <strong>${(data as any).prop_firm} ${(data as any).account_size} — ${(data as any).challenge_phase}</strong> challenge.</p>
+              <p>We have successfully passed your <strong>${(data as any).prop_firm} ${(data as any).account_size} — ${(data as any).challenge_phase}</strong> challenge.</p>
               ${updates.admin_notes ? `<p><strong>Note from our team:</strong> ${updates.admin_notes}</p>` : ''}
-              <p>Your funded account credentials should be available from your prop firm platform. Log in to collect your funded account.</p>
+              <p>Your funded account is ready. Log in to your prop firm platform to collect it.</p>
               <br/>
               <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="background:#22c55e;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">View Dashboard</a>
-              <br/><br/>
-              <p style="color:#666;font-size:12px">Thank you for choosing PropFirmPassing. We look forward to helping you again!</p>
             </div>
           `,
         });
