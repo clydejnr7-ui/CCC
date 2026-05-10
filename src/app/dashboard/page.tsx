@@ -16,6 +16,13 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single();
 
+  const typedProfile = profile as {
+    id?: string;
+    email?: string;
+    full_name?: string;
+    role?: string;
+  } | null;
+
   const { data: accounts } = await supabase
     .from('account_submissions')
     .select('*')
@@ -24,8 +31,8 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
-      user={{ id: user.id, email: user.email ?? '', ...profile }}
-      initialAccounts={accounts ?? []}
+      user={{ id: user.id, email: user.email ?? '', ...(typedProfile ?? {}) }}
+      initialAccounts={(accounts as any) ?? []}
     />
   );
 }
