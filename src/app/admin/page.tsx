@@ -16,7 +16,8 @@ export default async function AdminPage() {
     .eq('id', user.id)
     .single();
 
-  if (profile?.role !== 'admin') redirect('/dashboard');
+  const typedProfile = profile as { role?: string } | null;
+  if (typedProfile?.role !== 'admin') redirect('/dashboard');
 
   const { data: submissions } = await supabase
     .from('account_submissions')
